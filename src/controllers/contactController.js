@@ -13,6 +13,8 @@ const getContacts = async (req, res) => {
     }
     const contacts = await Contact.find(query)
       .populate('assignedTo', 'name email phone role')
+      .populate('createdBy', 'name role')
+      .populate('updatedBy', 'name role')
       .sort({ createdAt: -1 });
     res.json(contacts);
   } catch (error) {
@@ -36,7 +38,10 @@ const createContact = async (req, res) => {
       owner: req.user._id,
     });
     const createdContact = await contact.save();
-    res.status(201).json(createdContact);
+    const populatedContact = await Contact.findById(createdContact._id)
+      .populate('createdBy', 'name role')
+      .populate('updatedBy', 'name role');
+    res.status(201).json(populatedContact);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -187,6 +192,7 @@ const convertContactToLead = async (req, res) => {
     if (remarks) {
       contact.remarks = remarks;
     }
+    contact.updatedBy = req.user._id;
     await contact.save();
 
     res.status(201).json({
@@ -204,7 +210,7 @@ const convertContactToLead = async (req, res) => {
 // @access  Private
 const updateContact = async (req, res) => {
   try {
-    const { status, remarks } = req.body;
+    const { status, remarks, callBackDate } = req.body;
     const contact = await Contact.findById(req.params.id);
 
     if (!contact) {
@@ -216,20 +222,75 @@ const updateContact = async (req, res) => {
       return res.status(401).json({ message: 'Not authorized to update this contact' });
     }
 
+    let isNewCallBack = false;
     if (status) {
       const validStatuses = ['New', 'No Answer', 'Call Back', 'Interested', 'Not Interested', 'Converted'];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: 'Invalid contact status' });
       }
       contact.status = status;
+      if (status !== 'Call Back') {
+        contact.callBackDate = null;
+        contact.callBackNotified = false;
+      }
+    }
+
+    if (callBackDate !== undefined) {
+      const newDate = callBackDate ? new Date(callBackDate) : null;
+      const oldDateStr = contact.callBackDate ? new Date(contact.callBackDate).toISOString() : null;
+      const newDateStr = newDate ? newDate.toISOString() : null;
+
+      if (newDateStr !== oldDateStr) {
+        contact.callBackDate = newDate;
+        contact.callBackNotified = false;
+        isNewCallBack = !!newDate;
+      }
     }
 
     if (remarks !== undefined) {
       contact.remarks = remarks;
     }
 
-    const updatedContact = await contact.save();
-    res.json(updatedContact);
+    contact.updatedBy = req.user._id;
+
+    await contact.save();
+
+    const populatedContact = await Contact.findById(contact._id)
+      .populate('assignedTo', 'name email phone role')
+      .populate('createdBy', 'name role')
+      .populate('updatedBy', 'name role');
+
+    // Create notification if a new callback is scheduled
+    if (isNewCallBack && contact.callBackDate) {
+      const Notification = require('../models/notificationModel');
+      const followDate = new Date(contact.callBackDate);
+      const dateStr = followDate.toLocaleDateString('en-GB');
+      const timeStr = followDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      // Notify the assigned telecaller (if assigned)
+      if (contact.assignedTo) {
+        await Notification.create({
+          recipient: contact.assignedTo,
+          title: 'Callback Scheduled',
+          message: `New callback scheduled for ${contact.name} on ${dateStr} at ${timeStr}`,
+          type: 'FollowUp',
+          relatedId: contact._id
+        });
+      }
+
+      // Also notify admin if someone else updated it
+      if (req.user.role !== 'admin') {
+        await Notification.create({
+          recipient: contact.owner, // Admin who owns the system
+          title: 'Telecaller Scheduled Callback',
+          message: `${req.user.name} scheduled a callback for ${contact.name} on ${dateStr} at ${timeStr}`,
+          type: 'FollowUp',
+          relatedId: contact._id
+        });
+      }
+    }
+
+    res.json(populatedContact);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

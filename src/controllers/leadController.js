@@ -111,6 +111,9 @@ const updateLead = async (req, res) => {
       }
 
       const isNewFollowUp = req.body.followUpDate && req.body.followUpDate !== lead.followUpDate?.toISOString();
+      if (isNewFollowUp) {
+        lead.followUpNotified = false;
+      }
 
       const updatedLead = await lead.save();
 

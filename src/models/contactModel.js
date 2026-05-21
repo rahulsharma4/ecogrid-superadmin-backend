@@ -24,6 +24,13 @@ const contactSchema = mongoose.Schema(
       type: String,
       default: '',
     },
+    callBackDate: {
+      type: Date,
+    },
+    callBackNotified: {
+      type: Boolean,
+      default: false,
+    },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -32,6 +39,10 @@ const contactSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+    },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,

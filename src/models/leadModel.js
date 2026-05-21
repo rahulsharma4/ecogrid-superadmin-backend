@@ -56,6 +56,10 @@ const leadSchema = mongoose.Schema(
       enum: ['Pending', 'Completed', 'Missed'],
       default: 'Pending',
     },
+    followUpNotified: {
+      type: Boolean,
+      default: false,
+    },
     followUpRemarks: {
       type: String,
     },
