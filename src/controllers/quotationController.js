@@ -9,8 +9,9 @@ const createQuotation = async (req, res) => {
     const {
       leadId, systemSize, solarPanels, inverter, structureType,
       offering, gsmBased, cleaningFrequency, floorHeight, inverterLocation,
-      baseAmount, earlyBirdDiscount, additionalDiscount, gstPercentage, isGstInclusive,
-      centralSubsidy, stateSubsidy, terms, bankDetails, loanDetails, validUntil
+      baseAmount, earlyBirdDiscount, additionalDiscount, gstPercentage,
+      centralSubsidy, stateSubsidy, terms, bankDetails, loanDetails, validUntil,
+      isGstInclusive
     } = req.body;
 
     // Generate Quotation Number (e.g. Q-2026-0001)
@@ -30,7 +31,8 @@ const createQuotation = async (req, res) => {
     const baseAmt = Number(baseAmount) || 0;
     const earlyDisc = Number(earlyBirdDiscount) || 0;
     const addDisc = Number(additionalDiscount) || 0;
-    const gstPerc = Number(gstPercentage) || 0;
+    const isInclusive = isGstInclusive === true || isGstInclusive === 'true';
+    const gstPerc = isInclusive ? 8.9 : (Number(gstPercentage) || 0);
     const centralSub = Number(centralSubsidy) || 0;
     const stateSub = Number(stateSubsidy) || 0;
 
@@ -39,15 +41,14 @@ const createQuotation = async (req, res) => {
     
     let gstAmt = 0;
     let netPriceAmt = 0;
-    
-    if (isGstInclusive) {
-      gstAmt = (amountAfterDiscount * gstPerc) / (100 + gstPerc);
+    if (isInclusive) {
+      gstAmt = (amountAfterDiscount * 8.9) / 108.9;
       netPriceAmt = amountAfterDiscount;
     } else {
       gstAmt = (amountAfterDiscount * gstPerc) / 100;
       netPriceAmt = amountAfterDiscount + gstAmt;
     }
-    
+
     const netEffectivePriceAmt = netPriceAmt; // Subsidies no longer affect the final amount
 
     const ownerId = req.user.role === 'admin' ? req.user._id : req.user.owner;
@@ -70,7 +71,7 @@ const createQuotation = async (req, res) => {
       additionalDiscount: addDisc,
       gstPercentage: gstPerc,
       gstAmount: gstAmt,
-      isGstInclusive: !!isGstInclusive,
+      isGstInclusive: isInclusive,
       netPrice: netPriceAmt,
       centralSubsidy: centralSub,
       stateSubsidy: stateSub,

@@ -8,7 +8,7 @@ const createInvoice = async (req, res) => {
   try {
     const { 
       leadId, quotationId, systemSize, solarPanels, inverter,
-      baseAmount, gstPercentage, isGstInclusive, amountPaid, bankDetails
+      baseAmount, gstPercentage, amountPaid, bankDetails, isGstInclusive
     } = req.body;
 
     // Generate Invoice Number (e.g. INV-2026-0001)
@@ -25,20 +25,21 @@ const createInvoice = async (req, res) => {
     const invoiceNo = `INV-${year}-${nextNumber.toString().padStart(4, '0')}`;
 
     // Calculations
-    const gstPerc = Number(gstPercentage) || 0;
-    const baseAmtInput = Number(baseAmount) || 0;
+    const isInclusive = isGstInclusive === true || isGstInclusive === 'true';
+    const gstPerc = isInclusive ? 8.9 : (Number(gstPercentage) || 0);
+
     let gstAmount = 0;
     let totalAmount = 0;
     let storedBaseAmount = 0;
 
-    if (isGstInclusive) {
-      totalAmount = baseAmtInput;
-      gstAmount = (totalAmount * gstPerc) / (100 + gstPerc);
+    if (isInclusive) {
+      totalAmount = Number(baseAmount) || 0;
+      gstAmount = (totalAmount * 8.9) / 108.9;
       storedBaseAmount = totalAmount - gstAmount;
     } else {
-      gstAmount = (baseAmtInput * gstPerc) / 100;
-      totalAmount = baseAmtInput + gstAmount;
-      storedBaseAmount = baseAmtInput;
+      storedBaseAmount = Number(baseAmount) || 0;
+      gstAmount = (storedBaseAmount * gstPerc) / 100;
+      totalAmount = storedBaseAmount + gstAmount;
     }
 
     const balanceAmount = totalAmount - Number(amountPaid || 0);
@@ -60,7 +61,7 @@ const createInvoice = async (req, res) => {
       baseAmount: storedBaseAmount,
       gstPercentage: gstPerc,
       gstAmount,
-      isGstInclusive: !!isGstInclusive,
+      isGstInclusive: isInclusive,
       totalAmount,
       amountPaid: amountPaid || 0,
       balanceAmount,
