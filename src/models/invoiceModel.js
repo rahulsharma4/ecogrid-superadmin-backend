@@ -28,6 +28,7 @@ const invoiceSchema = mongoose.Schema(
     baseAmount: { type: Number, required: true },
     gstPercentage: { type: Number, default: 0 },
     gstAmount: { type: Number, default: 0 },
+    isGstInclusive: { type: Boolean, default: false },
     totalAmount: { type: Number, required: true }, // Formal total with GST
     
     amountPaid: { type: Number, default: 0 },

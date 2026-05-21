@@ -9,7 +9,7 @@ const createQuotation = async (req, res) => {
     const {
       leadId, systemSize, solarPanels, inverter, structureType,
       offering, gsmBased, cleaningFrequency, floorHeight, inverterLocation,
-      baseAmount, earlyBirdDiscount, additionalDiscount, gstPercentage,
+      baseAmount, earlyBirdDiscount, additionalDiscount, gstPercentage, isGstInclusive,
       centralSubsidy, stateSubsidy, terms, bankDetails, loanDetails, validUntil
     } = req.body;
 
@@ -36,8 +36,18 @@ const createQuotation = async (req, res) => {
 
     const totalDiscount = earlyDisc + addDisc;
     const amountAfterDiscount = Math.max(0, baseAmt - totalDiscount);
-    const gstAmt = (amountAfterDiscount * gstPerc) / 100;
-    const netPriceAmt = amountAfterDiscount + gstAmt;
+    
+    let gstAmt = 0;
+    let netPriceAmt = 0;
+    
+    if (isGstInclusive) {
+      gstAmt = (amountAfterDiscount * gstPerc) / (100 + gstPerc);
+      netPriceAmt = amountAfterDiscount;
+    } else {
+      gstAmt = (amountAfterDiscount * gstPerc) / 100;
+      netPriceAmt = amountAfterDiscount + gstAmt;
+    }
+    
     const netEffectivePriceAmt = netPriceAmt; // Subsidies no longer affect the final amount
 
     const ownerId = req.user.role === 'admin' ? req.user._id : req.user.owner;
@@ -60,6 +70,7 @@ const createQuotation = async (req, res) => {
       additionalDiscount: addDisc,
       gstPercentage: gstPerc,
       gstAmount: gstAmt,
+      isGstInclusive: !!isGstInclusive,
       netPrice: netPriceAmt,
       centralSubsidy: centralSub,
       stateSubsidy: stateSub,

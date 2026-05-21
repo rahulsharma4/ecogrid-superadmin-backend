@@ -72,6 +72,7 @@ const quotationSchema = mongoose.Schema(
     additionalDiscount: { type: Number, default: 0 },
     gstPercentage: { type: Number, default: 0 },
     gstAmount: { type: Number, default: 0 },
+    isGstInclusive: { type: Boolean, default: false },
     netPrice: { type: Number, required: true }, // (Base - Discounts + GST)
 
     // Subsidies
