@@ -8,6 +8,7 @@ const {
   assignContacts,
   convertContactToLead,
   updateContact,
+  getContactDetails,
 } = require('../controllers/contactController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
@@ -25,6 +26,7 @@ router.route('/:id/convert')
   .post(protect, convertContactToLead);
 
 router.route('/:id')
+  .get(protect, getContactDetails)
   .patch(protect, updateContact)
   .delete(protect, admin, deleteContact);
 

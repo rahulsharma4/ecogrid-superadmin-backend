@@ -106,17 +106,53 @@ const getStaffDetails = async (req, res) => {
       return res.status(404).json({ message: 'Staff member not found' });
     }
 
-    // Also get leads assigned to this staff
-    const Lead = require('../models/leadModel');
-    const leads = await Lead.find({ assignedTo: req.params.id }).sort({ updatedAt: -1 });
+    let leads = [];
+    let contacts = [];
+
+    if (staff.role === 'telecaller') {
+      const Contact = require('../models/contactModel');
+      contacts = await Contact.find({ assignedTo: req.params.id }).sort({ updatedAt: -1 });
+    } else {
+      const Lead = require('../models/leadModel');
+      leads = await Lead.find({ assignedTo: req.params.id }).sort({ updatedAt: -1 });
+    }
 
     res.json({
       staff,
-      leads
+      leads,
+      contacts
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = { authUser, registerUser, getStaff, deleteStaff, getStaffDetails };
+// @desc    Toggle staff active/inactive status (Block/Unblock)
+// @route   PATCH /api/staff/:id/toggle-status
+// @access  Private/Admin
+const toggleStaffStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify ownership
+    if (user.owner && user.owner.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: 'Not authorized to manage this staff member' });
+    }
+
+    user.status = user.status === 'active' ? 'inactive' : 'active';
+    await user.save();
+
+    res.json({
+      message: `Staff member status updated to ${user.status}`,
+      status: user.status
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { authUser, registerUser, getStaff, deleteStaff, getStaffDetails, toggleStaffStatus };

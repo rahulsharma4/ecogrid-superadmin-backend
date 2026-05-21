@@ -44,6 +44,30 @@ const contactSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          required: true,
+        },
+        remarks: {
+          type: String,
+          default: '',
+        },
+        callBackDate: {
+          type: Date,
+        },
+        updatedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: true,
+        },
+        updatedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

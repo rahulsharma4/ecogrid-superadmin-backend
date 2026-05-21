@@ -1,4 +1,5 @@
 const Contact = require('../models/contactModel');
+const mongoose = require('mongoose');
 
 // @desc    Get all contacts (Admin gets all owned, telecaller gets assigned)
 // @route   GET /api/contacts
@@ -28,19 +29,30 @@ const getContacts = async (req, res) => {
 const createContact = async (req, res) => {
   try {
     const { name, phone, address, status, remarks } = req.body;
+    const initialStatus = status || 'New';
+    const initialRemarks = remarks || '';
     const contact = new Contact({
       name,
       phone,
       address,
-      status: status || 'New',
-      remarks: remarks || '',
+      status: initialStatus,
+      remarks: initialRemarks,
       createdBy: req.user._id,
       owner: req.user._id,
+      statusHistory: [
+        {
+          status: initialStatus,
+          remarks: initialRemarks,
+          updatedBy: req.user._id,
+          updatedAt: new Date()
+        }
+      ]
     });
     const createdContact = await contact.save();
     const populatedContact = await Contact.findById(createdContact._id)
       .populate('createdBy', 'name role')
-      .populate('updatedBy', 'name role');
+      .populate('updatedBy', 'name role')
+      .populate('statusHistory.updatedBy', 'name role');
     res.status(201).json(populatedContact);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -57,15 +69,27 @@ const bulkCreateContacts = async (req, res) => {
       return res.status(400).json({ message: 'Invalid data format. Expected an array.' });
     }
 
-    const formattedContacts = contactsList.map((c) => ({
-      name: c.name,
-      phone: c.phone ? String(c.phone) : '',
-      address: c.address || '',
-      status: c.status || 'New',
-      remarks: c.remarks || '',
-      createdBy: req.user._id,
-      owner: req.user._id,
-    }));
+    const formattedContacts = contactsList.map((c) => {
+      const initialStatus = c.status || 'New';
+      const initialRemarks = c.remarks || '';
+      return {
+        name: c.name,
+        phone: c.phone ? String(c.phone) : '',
+        address: c.address || '',
+        status: initialStatus,
+        remarks: initialRemarks,
+        createdBy: req.user._id,
+        owner: req.user._id,
+        statusHistory: [
+          {
+            status: initialStatus,
+            remarks: initialRemarks,
+            updatedBy: req.user._id,
+            updatedAt: new Date()
+          }
+        ]
+      };
+    });
 
     const createdContacts = await Contact.insertMany(formattedContacts);
     res.status(201).json(createdContacts);
@@ -193,6 +217,12 @@ const convertContactToLead = async (req, res) => {
       contact.remarks = remarks;
     }
     contact.updatedBy = req.user._id;
+    contact.statusHistory.push({
+      status: 'Converted',
+      remarks: remarks || 'Converted to Lead',
+      updatedBy: req.user._id,
+      updatedAt: new Date()
+    });
     await contact.save();
 
     res.status(201).json({
@@ -253,12 +283,22 @@ const updateContact = async (req, res) => {
 
     contact.updatedBy = req.user._id;
 
+    // Log update into statusHistory
+    contact.statusHistory.push({
+      status: contact.status,
+      remarks: contact.remarks,
+      callBackDate: contact.callBackDate,
+      updatedBy: req.user._id,
+      updatedAt: new Date()
+    });
+
     await contact.save();
 
     const populatedContact = await Contact.findById(contact._id)
       .populate('assignedTo', 'name email phone role')
       .populate('createdBy', 'name role')
-      .populate('updatedBy', 'name role');
+      .populate('updatedBy', 'name role')
+      .populate('statusHistory.updatedBy', 'name role');
 
     // Create notification if a new callback is scheduled
     if (isNewCallBack && contact.callBackDate) {
@@ -296,6 +336,47 @@ const updateContact = async (req, res) => {
   }
 };
 
+// @desc    Get single contact details
+// @route   GET /api/contacts/:id
+// @access  Private
+const getContactDetails = async (req, res) => {
+  try {
+    const contact = await Contact.findById(req.params.id)
+      .populate('assignedTo', 'name email phone role')
+      .populate('createdBy', 'name role')
+      .populate('updatedBy', 'name role')
+      .populate('statusHistory.updatedBy', 'name role');
+
+    if (!contact) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+
+    // Authorize: Admin or assigned Telecaller
+    if (req.user.role !== 'admin' && (!contact.assignedTo || contact.assignedTo._id.toString() !== req.user._id.toString())) {
+      return res.status(401).json({ message: 'Not authorized to view this contact' });
+    }
+
+    // Dynamic fallback for older contacts that don't have statusHistory
+    const contactObj = contact.toObject();
+    if (!contactObj.statusHistory || contactObj.statusHistory.length === 0) {
+      contactObj.statusHistory = [
+        {
+          _id: new mongoose.Types.ObjectId(),
+          status: contactObj.status,
+          remarks: contactObj.remarks || 'No initial remarks recorded',
+          callBackDate: contactObj.callBackDate,
+          updatedBy: contactObj.createdBy || contactObj.owner,
+          updatedAt: contactObj.createdAt
+        }
+      ];
+    }
+
+    res.json(contactObj);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getContacts,
   createContact,
@@ -304,4 +385,5 @@ module.exports = {
   assignContacts,
   convertContactToLead,
   updateContact,
+  getContactDetails,
 };
