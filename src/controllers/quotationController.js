@@ -6,8 +6,8 @@ const Lead = require('../models/leadModel');
 // @access  Private
 const createQuotation = async (req, res) => {
   try {
-    const { 
-      leadId, systemSize, solarPanels, inverter, structureType, 
+    const {
+      leadId, systemSize, solarPanels, inverter, structureType,
       offering, gsmBased, cleaningFrequency, floorHeight, inverterLocation,
       baseAmount, earlyBirdDiscount, additionalDiscount, gstPercentage,
       centralSubsidy, stateSubsidy, terms, bankDetails, loanDetails, validUntil
@@ -16,13 +16,13 @@ const createQuotation = async (req, res) => {
     // Generate Quotation Number (e.g. Q-2026-0001)
     const year = new Date().getFullYear();
     const lastQuotation = await Quotation.findOne({
-        quotationNo: new RegExp(`^Q-${year}-`)
+      quotationNo: new RegExp(`^Q-${year}-`)
     }).sort({ quotationNo: -1 });
 
     let nextNumber = 1;
     if (lastQuotation) {
-        const lastNo = parseInt(lastQuotation.quotationNo.split('-')[2]);
-        nextNumber = lastNo + 1;
+      const lastNo = parseInt(lastQuotation.quotationNo.split('-')[2]);
+      nextNumber = lastNo + 1;
     }
     const quotationNo = `Q-${year}-${nextNumber.toString().padStart(4, '0')}`;
 
@@ -43,13 +43,14 @@ const createQuotation = async (req, res) => {
     const ownerId = req.user.role === 'admin' ? req.user._id : req.user.owner;
 
     const quotation = await Quotation.create({
+      ...req.body,
       lead: leadId,
       quotationNo,
       systemSize: systemSize || 'N/A',
       solarPanels: solarPanels || 'N/A',
       inverter: inverter || 'N/A',
       structureType: structureType || '',
-      offering: offering || 'ZenPro',
+      offering: offering || 'EcoGrid',
       gsmBased: gsmBased || 'No',
       cleaningFrequency: cleaningFrequency || 'NO',
       floorHeight: floorHeight || '',
@@ -66,7 +67,7 @@ const createQuotation = async (req, res) => {
       terms: terms || '',
       bankDetails: bankDetails || {},
       loanDetails: loanDetails || {},
-      validUntil: validUntil || new Date(Date.now() + 30*24*60*60*1000),
+      validUntil: validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       createdBy: req.user._id,
       owner: ownerId,
     });
@@ -108,7 +109,7 @@ const getQuotationById = async (req, res) => {
     const quotation = await Quotation.findById(req.params.id)
       .populate('lead', 'name email phone address')
       .populate('createdBy', 'name');
-    
+
     if (quotation) {
       res.json(quotation);
     } else {

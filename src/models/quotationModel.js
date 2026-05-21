@@ -22,12 +22,48 @@ const quotationSchema = mongoose.Schema(
     // Technical Specs (from Image 1)
     systemSize: { type: String, required: true }, // e.g. "4.34 kWp"
     solarPanels: { type: String, required: true }, // e.g. "Adani - 620 Wp [7 panels]"
+    solarPanelsMake: { type: String, default: 'Adani/Luminous' },
+    solarPanelsQty: { type: String, default: 'As per capacity' },
     inverter: { type: String, required: true }, // e.g. "Polycab - 5 kW (Single Phase)"
+    inverterMake: { type: String, default: 'Solis' },
+    inverterQty: { type: String, default: '1 Unit' },
     structureType: { type: String }, // e.g. "Elevated"
-    offering: { type: String }, // e.g. "ZenPro"
+    structureMake: { type: String, default: 'Approved Make' },
+    structureQty: { type: String, default: 'For panels' },
+
+    // Additional table rows
+    acdbDetails: { type: String, default: 'For Safe AC Distribution, IP65' },
+    acdbMake: { type: String, default: 'Polycab' },
+    acdbQty: { type: String, default: '1 Unit' },
+
+    dcdbDetails: { type: String, default: 'For Safe DC Distribution, IP65' },
+    dcdbMake: { type: String, default: 'Polycab' },
+    dcdbQty: { type: String, default: '1 Unit' },
+
+    earthingDetails: { type: String, default: 'Standard earthing for electrical safety' },
+    earthingMake: { type: String, default: 'True Power' },
+    earthingQty: { type: String, default: '3 Unit' },
+
+    wiringDetails: { type: String, default: 'For safe and secure wiring' },
+    wiringMake: { type: String, default: '' },
+    wiringQty: { type: String, default: 'As per Requirement' },
+
+    cablesDetails: { type: String, default: 'Cu wire 4mm' },
+    cablesMake: { type: String, default: 'Polycab' },
+    cablesQty: { type: String, default: '1 Set' },
+
+    lightningDetails: { type: String, default: 'Safely grounds lighting, protecting structure and equipment.' },
+    lightningMake: { type: String, default: 'Approved Make' },
+    lightningQty: { type: String, default: '1 Set' },
+
+    installationDetails: { type: String, default: 'Complete Installation & Setup' },
+    installationMake: { type: String, default: '' },
+    installationQty: { type: String, default: 'Each' },
+
+    offering: { type: String }, // e.g. "EcoGrid"
     gsmBased: { type: String, default: 'No' },
     cleaningFrequency: { type: String, default: 'NO' },
-    floorHeight: { type: String }, // e.g. "G+3"
+    floorHeight: { type: String }, // e.g. "G+0"
     inverterLocation: { type: String }, // e.g. "Ground"
 
     // Pricing (from Image 1 & 2)
@@ -37,7 +73,7 @@ const quotationSchema = mongoose.Schema(
     gstPercentage: { type: Number, default: 0 },
     gstAmount: { type: Number, default: 0 },
     netPrice: { type: Number, required: true }, // (Base - Discounts + GST)
-    
+
     // Subsidies
     centralSubsidy: { type: Number, default: 0 }, // Central Govt DBT
     stateSubsidy: { type: Number, default: 0 }, // State Subsidy (UPNEEDA)

@@ -1,12 +1,39 @@
 const Lead = require('../models/leadModel');
 const User = require('../models/userModel');
 const Payment = require('../models/paymentModel');
+const Contact = require('../models/contactModel');
 
 // @desc    Get dashboard statistics
 // @route   GET /api/dashboard/stats
 // @access  Private
 const getDashboardStats = async (req, res) => {
   try {
+    // If telecaller, return contact calling stats
+    if (req.user.role === 'telecaller') {
+      const totalContacts = await Contact.countDocuments({ assignedTo: req.user._id });
+      const pendingContacts = await Contact.countDocuments({ assignedTo: req.user._id, status: 'New' });
+      const convertedContacts = await Contact.countDocuments({ assignedTo: req.user._id, status: 'Converted' });
+      
+      const contactStatusDistribution = await Contact.aggregate([
+        { $match: { assignedTo: req.user._id } },
+        { $group: { _id: '$status', value: { $sum: 1 } } },
+        { $project: { name: '$_id', value: 1, _id: 0 } }
+      ]);
+
+      const recentContacts = await Contact.find({ assignedTo: req.user._id })
+        .sort({ updatedAt: -1 })
+        .limit(5);
+
+      return res.json({
+        role: 'telecaller',
+        totalContacts,
+        pendingContacts,
+        convertedContacts,
+        contactStatusDistribution,
+        recentContacts
+      });
+    }
+
     let leadQuery = { owner: req.user.role === 'admin' ? req.user._id : req.user.owner };
     let paymentQuery = { owner: req.user.role === 'admin' ? req.user._id : req.user.owner };
     
