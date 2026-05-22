@@ -5,7 +5,7 @@ const Lead = require('../models/leadModel');
 // @route   POST /api/payments
 // @access  Private
 const addPayment = async (req, res) => {
-  const { leadId, amount, paymentDate, paymentMode, paymentType, remarks } = req.body;
+  const { leadId, amount, paymentDate, paymentMode, paymentType, remarks, referenceNo, bankName, chequeDate } = req.body;
 
   try {
     const lead = await Lead.findById(leadId);
@@ -24,6 +24,9 @@ const addPayment = async (req, res) => {
       paymentDate,
       paymentMode,
       paymentType,
+      referenceNo,
+      bankName,
+      chequeDate,
       remarks,
       addedBy: req.user._id,
       owner: req.user.role === 'admin' ? req.user._id : req.user.owner,

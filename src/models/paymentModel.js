@@ -18,12 +18,21 @@ const paymentSchema = mongoose.Schema(
     paymentMode: {
       type: String,
       required: true,
-      enum: ['Cash', 'Online', 'Cheque'],
+      enum: ['Cash', 'Online', 'Cheque', 'UPI', 'Bank Transfer'],
     },
     paymentType: {
       type: String,
       required: true,
       enum: ['Booking Amount', 'Material Payment', 'Installation Payment', 'Final Payment'],
+    },
+    referenceNo: {
+      type: String,
+    },
+    bankName: {
+      type: String,
+    },
+    chequeDate: {
+      type: Date,
     },
     remarks: {
       type: String,
