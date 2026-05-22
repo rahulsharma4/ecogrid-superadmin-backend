@@ -55,7 +55,7 @@ const getPayments = async (req, res) => {
     }
 
     const payments = await Payment.find(query)
-      .populate('leadId', 'name phone email address')
+      .populate('leadId', 'name phone email address quotationAmount')
       .populate('addedBy', 'name');
     
     res.json(payments);
