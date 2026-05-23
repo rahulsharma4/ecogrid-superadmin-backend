@@ -65,6 +65,9 @@ const quotationSchema = mongoose.Schema(
     cleaningFrequency: { type: String, default: 'NO' },
     floorHeight: { type: String }, // e.g. "G+0"
     inverterLocation: { type: String }, // e.g. "Ground"
+    inverterHybrid: { type: String, default: 'No' },
+    battery: { type: String, default: 'No' },
+    batteryRemark: { type: String, default: '' },
 
     // Pricing (from Image 1 & 2)
     baseAmount: { type: Number, required: true }, // Rooftop System Cost

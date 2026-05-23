@@ -9,6 +9,7 @@ const createQuotation = async (req, res) => {
     const {
       leadId, systemSize, solarPanels, inverter, structureType,
       offering, gsmBased, cleaningFrequency, floorHeight, inverterLocation,
+      inverterHybrid, battery, batteryRemark,
       baseAmount, earlyBirdDiscount, additionalDiscount, gstPercentage,
       centralSubsidy, stateSubsidy, terms, bankDetails, loanDetails, validUntil,
       isGstInclusive
@@ -66,6 +67,9 @@ const createQuotation = async (req, res) => {
       cleaningFrequency: cleaningFrequency || 'NO',
       floorHeight: floorHeight || '',
       inverterLocation: inverterLocation || 'Ground',
+      inverterHybrid: inverterHybrid || 'No',
+      battery: battery || 'No',
+      batteryRemark: batteryRemark || '',
       baseAmount: baseAmt,
       earlyBirdDiscount: earlyDisc,
       additionalDiscount: addDisc,
