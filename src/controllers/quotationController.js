@@ -50,7 +50,7 @@ const createQuotation = async (req, res) => {
       netPriceAmt = amountAfterDiscount + gstAmt;
     }
 
-    const netEffectivePriceAmt = netPriceAmt; // Subsidies no longer affect the final amount
+    const netEffectivePriceAmt = Math.max(0, netPriceAmt - centralSub - stateSub);
 
     const ownerId = req.user.role === 'admin' ? req.user._id : req.user.owner;
 
@@ -182,7 +182,7 @@ const updateQuotation = async (req, res) => {
       netPriceAmt = amountAfterDiscount + gstAmt;
     }
 
-    const netEffectivePriceAmt = netPriceAmt;
+    const netEffectivePriceAmt = Math.max(0, netPriceAmt - centralSub - stateSub);
 
     // Update technical and specs details
     quotation.systemSize = systemSize || quotation.systemSize;
