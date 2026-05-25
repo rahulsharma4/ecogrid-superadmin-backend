@@ -31,12 +31,21 @@ const authUser = async (req, res) => {
         console.error('Activity log error:', logErr.message);
       }
 
+      let companyDetails = user.companyDetails;
+      if (user.role === 'staff' || user.role === 'telecaller') {
+        const ownerUser = await User.findById(user.owner);
+        if (ownerUser) {
+          companyDetails = ownerUser.companyDetails;
+        }
+      }
+
       res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
         token: generateToken(user._id),
+        companyDetails,
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
@@ -193,4 +202,100 @@ const toggleStaffStatus = async (req, res) => {
   }
 };
 
-module.exports = { authUser, registerUser, getStaff, deleteStaff, getStaffDetails, toggleStaffStatus };
+const updateCompanySettings = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.companyDetails) {
+      user.companyDetails = {};
+    }
+
+    // Set updated values individually so Mongoose tracks modifications properly
+    if (req.body) {
+      Object.keys(req.body).forEach((key) => {
+        user.companyDetails[key] = req.body[key];
+      });
+      // Explicitly mark companyDetails as modified
+      user.markModified('companyDetails');
+    }
+
+    await user.save();
+
+    // Log activity
+    try {
+      const ActivityLog = require('../models/activityLogModel');
+      const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+      await ActivityLog.create({
+        user: user._id,
+        action: 'UPDATE_COMPANY_SETTINGS',
+        details: `Admin ${user.name} updated white-label company settings`,
+        ipAddress,
+      });
+    } catch (logErr) {
+      console.error('Activity log error:', logErr.message);
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      companyDetails: user.companyDetails
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getCompanySettings = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user.companyDetails || {});
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getCompanyByEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ message: 'Email query is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ message: 'Company not found' });
+    }
+
+    let companyDetails = user.companyDetails;
+    if (user.role === 'staff' || user.role === 'telecaller') {
+      const ownerUser = await User.findById(user.owner);
+      if (ownerUser) {
+        companyDetails = ownerUser.companyDetails;
+      }
+    }
+
+    res.json(companyDetails || {});
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  authUser,
+  registerUser,
+  getStaff,
+  deleteStaff,
+  getStaffDetails,
+  toggleStaffStatus,
+  updateCompanySettings,
+  getCompanySettings,
+  getCompanyByEmail
+};

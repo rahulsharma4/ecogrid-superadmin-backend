@@ -4,7 +4,7 @@ const SystemSettings = require('../models/systemSettingsModel');
 const seedSuperAdmin = async () => {
   try {
     // 1. Seed Super Admin user
-    const superAdminEmail = 'superadmin@ecogrid.com';
+    const superAdminEmail = 'superadmin@solarhub.com';
     const superAdminExists = await User.findOne({ email: superAdminEmail });
 
     if (!superAdminExists) {
@@ -17,7 +17,7 @@ const seedSuperAdmin = async () => {
         status: 'active',
       });
       await superAdmin.save();
-      console.log('Seeder: Default Super Admin account successfully created (superadmin@ecogrid.com / superadmin123)!');
+      console.log('Seeder: Default Super Admin account successfully created (superadmin@solarhub.com / superadmin123)!');
     } else {
       console.log('Seeder: Super Admin account already verified.');
     }
@@ -29,7 +29,7 @@ const seedSuperAdmin = async () => {
         maintenanceMode: false,
         allowNewAdminRegistration: true,
         installationTargetkW: 1200,
-        contactEmail: 'support@ecogrid.com',
+        contactEmail: 'support@solarhub.com',
       });
       await defaultSettings.save();
       console.log('Seeder: Default System Settings created!');

@@ -62,7 +62,7 @@ const createQuotation = async (req, res) => {
       solarPanels: solarPanels || 'N/A',
       inverter: inverter || 'N/A',
       structureType: structureType || '',
-      offering: offering || 'EcoGrid',
+      offering: offering || 'Solar Hub',
       gsmBased: gsmBased || 'No',
       cleaningFrequency: cleaningFrequency || 'NO',
       floorHeight: floorHeight || '',

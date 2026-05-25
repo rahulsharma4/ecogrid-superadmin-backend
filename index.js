@@ -38,7 +38,7 @@ app.use('/api/superadmin', require('./src/routes/superadminRoutes'));
 
 
 app.get('/', (req, res) => {
-  res.send('EcoGrid CRM API is running...');
+  res.send('Solar Hub CRM API is running...');
 });
 
 const PORT = process.env.PORT || 5000;

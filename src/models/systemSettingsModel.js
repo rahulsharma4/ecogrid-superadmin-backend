@@ -16,7 +16,7 @@ const systemSettingsSchema = mongoose.Schema(
     },
     contactEmail: {
       type: String,
-      default: 'support@ecogrid.com',
+      default: 'support@solarhub.com',
     },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
