@@ -1,8 +1,59 @@
 const User = require('../models/userModel');
 const SystemSettings = require('../models/systemSettingsModel');
 
+const migrateLegacyBranding = async () => {
+  try {
+    const users = await User.find({
+      $or: [
+        { 'companyDetails.companyName': /ecogrid/i },
+        { 'companyDetails.supportEmail': /ecogrid/i },
+        { 'companyDetails.companyAddress': /ecogrid/i },
+        { 'companyDetails.websiteUrl': /ecogrid/i },
+        { 'companyDetails.upiId': /ecogrid/i },
+        { 'companyDetails.payeeName': /ecogrid/i }
+      ]
+    });
+
+    for (let user of users) {
+      if (user.companyDetails) {
+        let modified = false;
+        
+        const fieldsToMigrate = [
+          'companyName',
+          'supportEmail',
+          'companyAddress',
+          'websiteUrl',
+          'upiId',
+          'payeeName'
+        ];
+
+        fieldsToMigrate.forEach(field => {
+          if (user.companyDetails[field] && /ecogrid/i.test(user.companyDetails[field])) {
+            user.companyDetails[field] = user.companyDetails[field]
+              .replace(/ecogridinfra\.in/gi, 'solarhub.com')
+              .replace(/ecogrid/gi, 'solarhub')
+              .replace(/ECOGRID/gi, 'SOLAR HUB');
+            modified = true;
+          }
+        });
+
+        if (modified) {
+          user.markModified('companyDetails');
+          await user.save();
+          console.log(`Seeder: Migrated legacy EcoGrid branding for user ${user.email}`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Migration error:', err.message);
+  }
+};
+
 const seedSuperAdmin = async () => {
   try {
+    // Run migration for existing records
+    await migrateLegacyBranding();
+
     // 1. Seed Super Admin user
     const superAdminEmail = 'superadmin@solarhub.com';
     const superAdminExists = await User.findOne({ email: superAdminEmail });
