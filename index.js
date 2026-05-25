@@ -34,6 +34,7 @@ app.use('/api/quotations', require('./src/routes/quotationRoutes'));
 app.use('/api/invoices', require('./src/routes/invoiceRoutes'));
 app.use('/api/notifications', require('./src/routes/notificationRoutes'));
 app.use('/api/contacts', require('./src/routes/contactRoutes'));
+app.use('/api/superadmin', require('./src/routes/superadminRoutes'));
 
 
 app.get('/', (req, res) => {

@@ -16,6 +16,21 @@ const authUser = async (req, res) => {
       if (user.status === 'inactive') {
         return res.status(401).json({ message: 'Your account is inactive. Please contact admin.' });
       }
+
+      // Log login event
+      try {
+        const ActivityLog = require('../models/activityLogModel');
+        const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+        await ActivityLog.create({
+          user: user._id,
+          action: 'LOGIN',
+          details: `${user.name} (${user.role}) logged in successfully`,
+          ipAddress,
+        });
+      } catch (logErr) {
+        console.error('Activity log error:', logErr.message);
+      }
+
       res.json({
         _id: user._id,
         name: user.name,
@@ -36,6 +51,15 @@ const registerUser = async (req, res) => {
     const { name, email, phone, password, role } = req.body;
     const isAdminCreating = req.user && req.user.role === 'admin';
     
+    // Check if new admin registration is allowed globally
+    if (!isAdminCreating) {
+      const SystemSettings = require('../models/systemSettingsModel');
+      const settings = await SystemSettings.findOne();
+      if (settings && settings.allowNewAdminRegistration === false) {
+        return res.status(403).json({ message: 'New Administrator registrations are currently disabled by system policy.' });
+      }
+    }
+
     const user = new User({
       name,
       email,
@@ -48,6 +72,20 @@ const registerUser = async (req, res) => {
     await user.save();
 
     if (user) {
+      // Log registration event
+      try {
+        const ActivityLog = require('../models/activityLogModel');
+        const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+        await ActivityLog.create({
+          user: user._id,
+          action: 'REGISTER',
+          details: `New ${user.role} account registered: ${user.name} (${user.email})`,
+          ipAddress,
+        });
+      } catch (logErr) {
+        console.error('Activity log error:', logErr.message);
+      }
+
       // Return only essential fields to keep response clean and fast
       res.status(201).json({
         _id: user._id,
