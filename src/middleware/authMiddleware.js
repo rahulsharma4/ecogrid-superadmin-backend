@@ -13,11 +13,22 @@ const protect = async (req, res, next) => {
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      req.user = await User.findById(decoded.id).select('-password');
+      req.user = await User.findById(decoded.id);
 
       if (!req.user || req.user.isDeleted || req.user.status === 'inactive') {
         return res.status(401).json({ message: 'Not authorized, user account is inactive or deleted' });
       }
+
+      // Check if password has been changed/reset
+      if (decoded.sig) {
+        const currentSig = req.user.password ? req.user.password.substring(req.user.password.length - 10) : '';
+        if (decoded.sig !== currentSig) {
+          return res.status(401).json({ message: 'Not authorized, password has been changed. Please login again.' });
+        }
+      }
+
+      // Remove password hash from memory
+      req.user.password = undefined;
 
       next();
     } catch (error) {

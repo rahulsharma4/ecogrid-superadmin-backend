@@ -44,7 +44,7 @@ const authUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id),
+        token: generateToken(user._id, user.password),
         companyDetails,
       });
     } else {
@@ -288,6 +288,68 @@ const getCompanyByEmail = async (req, res) => {
   }
 };
 
+// @desc    Update staff details
+// @route   PUT /api/staff/:id
+// @access  Private/Admin
+const updateStaff = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify ownership
+    if (user.owner && user.owner.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: 'Not authorized to manage this staff member' });
+    }
+
+    const { name, email, phone, password, role, status } = req.body;
+
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+    if (role) user.role = role;
+    if (status) user.status = status;
+
+    let passwordChanged = false;
+    if (password && password.trim() !== '') {
+      user.password = password;
+      passwordChanged = true;
+    }
+
+    await user.save();
+
+    // Log update event
+    try {
+      const ActivityLog = require('../models/activityLogModel');
+      const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+      await ActivityLog.create({
+        user: req.user._id,
+        action: 'UPDATE_STAFF',
+        details: `Staff member updated: ${user.name} (${user.email}). ${passwordChanged ? 'Password was updated/reset.' : ''}`,
+        ipAddress,
+      });
+    } catch (logErr) {
+      console.error('Activity log error:', logErr.message);
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      status: user.status
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'A user with this email already exists.' });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   authUser,
   registerUser,
@@ -297,5 +359,6 @@ module.exports = {
   toggleStaffStatus,
   updateCompanySettings,
   getCompanySettings,
-  getCompanyByEmail
+  getCompanyByEmail,
+  updateStaff
 };
