@@ -39,6 +39,11 @@ const leadSchema = mongoose.Schema(
       type: String,
       default: 'Direct',
     },
+    fbLeadId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

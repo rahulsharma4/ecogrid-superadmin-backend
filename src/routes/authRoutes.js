@@ -17,4 +17,7 @@ router.route('/company-settings')
   .get(protect, admin, getCompanySettings)
   .put(protect, admin, updateCompanySettings);
 
+router.post('/facebook/connect', protect, admin, require('../controllers/fbController').connectFacebookPage);
+router.post('/facebook/disconnect', protect, admin, require('../controllers/fbController').disconnectFacebookPage);
+
 module.exports = router;

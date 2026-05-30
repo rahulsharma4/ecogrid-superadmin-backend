@@ -67,6 +67,10 @@ const userSchema = mongoose.Schema(
       companyTagline: { type: String, default: 'Powering the Solar Revolution.' },
       companyDescription: { type: String, default: 'Access the Command Center to manage your sustainable energy infrastructure.' },
       companySubHeader: { type: String, default: 'Solar Command' },
+      fbPageId: { type: String, default: '' },
+      fbPageAccessToken: { type: String, default: '' },
+      fbPageName: { type: String, default: '' },
+      fbAccessToken: { type: String, default: '' },
     },
   },
   {
