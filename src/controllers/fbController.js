@@ -166,7 +166,18 @@ exports.connectFacebookPage = async (req, res) => {
 
     const longLivedPageToken = exchangeData.access_token;
 
-    // 3. Save to User settings
+    // 3. Subscribe the App to the Page's webhooks for 'leadgen'
+    const subscribeUrl = `https://graph.facebook.com/v19.0/${selectedPageId}/subscribed_apps?subscribed_fields=leadgen&access_token=${longLivedPageToken}`;
+    const subscribeResponse = await fetch(subscribeUrl, { method: 'POST' });
+    const subscribeData = await subscribeResponse.json();
+
+    if (subscribeData.error) {
+      console.error('Failed to subscribe App to Page:', subscribeData.error);
+    } else {
+      console.log(`Successfully subscribed App to Page ID: ${selectedPageId}`);
+    }
+
+    // 4. Save to User settings
     const user = await User.findById(req.user._id);
     if (!user || user.role !== 'admin') {
       return res.status(403).json({ message: 'Only Admin accounts can link social integration pages.' });
